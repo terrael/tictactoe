@@ -1,8 +1,6 @@
 package tictactoe;
 
-import java.time.LocalDateTime;
-import java.util.Random;
-import java.util.Scanner;
+import java.util.*;
 
 public class Spiel {
     private Feld feld;
@@ -11,63 +9,74 @@ public class Spiel {
     private Boolean gameOn = true;
     private final String regex = "^[1-9]$";
     private Random rand;
-
     Scanner scan;
-
     private Boolean spielGewonnen(){
-        // TODO: überprüfe ob ein Gewinner existiert
-        return true;
+        return feld.vorbei();
     }
 
     private Boolean unentschieden(){
-        return feld.
+        return feld.unentschieden();
     }
 
-    // TODO: Logik aufräumen, so dass nur eine Funktion benötigt wird
-    private void computerZug() {
-        Boolean inEingabe  = true;
-        Integer pos;
+    private void Zug(SpielerTyp spielerTyp) {
+        if (feld.vorbei() || feld.unentschieden()) {
+            return;
+        }
+        Boolean inEingabe = true;
+        Integer pos = 0;
+        // (Kondition) ? "X" : "O"
+        // (Kondition) falls dann sonst
+        // if(spielerTyp == SpielerTyp.SPIELER){"X"}else{"O"}
+        String marker = (spielerTyp == SpielerTyp.SPIELER)
+                ? "X"
+                : "O";
         while (inEingabe) {
-            pos = rand.nextInt(10);
-            if(positionKorrekt(pos)) {
-                feld.setMarker("O", pos);
-                inEingabe = false  ;
+            switch(spielerTyp){
+                case COMPUTER -> {
+                    pos = rand.nextInt(10);
+                    inEingabe = !positionKorrekt(pos);
+                }
+                case SPIELER -> {
+                    // TODO: Bug bei falscher Eingab
+                    pos = Integer.valueOf(scan.next(regex));
+                    inEingabe = !positionKorrekt(pos);
+                }
             }
-        }
+        }feld.setMarker( marker, pos);
     }
 
-    private void spielerZug(){
-        Boolean inEingabe  = true;
-        Integer pos;
-        while(inEingabe){
-            pos = Integer.valueOf(scan.next(regex));
-            if (positionKorrekt(Integer.valueOf(pos))) {
-                feld.setMarker("X", pos);
-                inEingabe = false;
-            }
-        }
-    }
-
+    // TODO: XXO -> game over aus soll nur bei XXX oder OOO passieren
     Boolean positionKorrekt(Integer pos){
+        if (pos < 1 || pos > 9) {
+            System.out.println("Die Position muss zwischen 1 und 9 liegen.");
+            return false;
+        }
+
+        if (!feld.positionKorrekt(pos)) {
+            System.out.println("Die Position ist bereits belegt. Bitte wähle eine andere.");
+            return false;
+        }
+
         return true;
-        // TODO: delegieren ans Feld
     }
 
 
 
-    void zug(){
-        spielerZug();
-        feld.unentschieden();
-        computerZug();
+    Boolean spielLäuft(){
+        return !feld.unentschieden() && !feld.vorbei();
     }
 
     Spiel(){
         feld = new Feld();
-        scan = new Scanner(System.in);
         rand = new Random(System.currentTimeMillis() / 1000L);
+        feld.printBoard();
         while(gameOn){
+            scan = new Scanner(System.in);
+            Zug(SpielerTyp.SPIELER);
+            Zug(SpielerTyp.COMPUTER);
+            gameOn = spielLäuft();
             feld.printBoard();
-            zug();
         }
+        // TODO: Gewinn oder Verlust bzw Unentschieden sollen geprinted werden
     }
 }
